@@ -9,6 +9,7 @@ import com.microsoft.playwright.Page;
 
 public class VisionPovMoreDataPage {
 	Page page;
+	
 
 	public VisionPovMoreDataPage(Page page) {
 		this.page = page;

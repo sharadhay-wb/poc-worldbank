@@ -62,6 +62,7 @@ public class VisionIndicatorTest {
 	@Test(enabled = true, dependsOnMethods = "verifyVision")
 	public void verifyPovChart() throws IOException {
 		// Step 3
+		
 		visionPage.getLivInPovHeading().scrollIntoViewIfNeeded();
 		log("Verify whether the line chart is displayed by default on the page for the Percentage of population living in poverty (at $2.15/day and $6.85/day)vision indicator");
 		assertThat(page.locator("section"))
