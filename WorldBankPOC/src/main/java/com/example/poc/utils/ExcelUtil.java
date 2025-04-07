@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.HashMap;
+import java.util.List;
 
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.DateUtil;
@@ -24,7 +25,6 @@ public class ExcelUtil {
 	}
 
 	public HashMap<Integer, Double> getExcelData(String heading) throws IOException {
-
 		System.err.println("Trying");
 		excelFilePath = getResourcePath(heading);
 		System.err.println("excelFilePath:- " + excelFilePath);
@@ -55,6 +55,48 @@ public class ExcelUtil {
 		return resultMap;
 	}
 
+
+	public HashMap<String, HashMap<Integer, Double>> getDataCountryWise(List<String> countryList,String heading) throws IOException {
+		System.err.println("Trying");
+		excelFilePath = getResourcePath(heading);
+		System.err.println("excelFilePath:- " + excelFilePath);
+		HashMap<Integer, Double> innerMap = new HashMap<>();
+		HashMap<String, HashMap<Integer, Double>> resultMap = new HashMap<>();
+		var fis = new FileInputStream(new File(excelFilePath));
+		var sheet = new XSSFWorkbook(fis).getSheet("Disaggregate");
+		setSheet(sheet);
+		int maxRows = sheet.getLastRowNum();
+		
+		System.err.println("maxrows: " + maxRows);
+		countryList.forEach(t-> {
+		for (int i = 1; i <= maxRows; i++) {
+			setRowNumber(i);
+			if (getValue("Geography_Name").equals(t)) {
+				if (heading.contains("$6.85/day") && getValue("Indicator_Name").toString().contains("at $6.85/day")) {
+					System.err.println(getValue("Time_Period") + " : " + getValue("Value"));
+					innerMap.put(Integer.parseInt((String) getValue("Time_Period")), (Double) getValue("Value"));
+					resultMap.put(t, innerMap);
+					break;
+				} else if (heading.contains("$2.15/day")
+						&& getValue("Indicator_Name").toString().contains("at $2.15/day")) {
+					System.err.println(getValue("Time_Period") + " : " + getValue("Value"));
+					innerMap.put(Integer.parseInt((String) getValue("Time_Period")), (Double) getValue("Value"));
+					resultMap.put(t, innerMap);
+					break;
+				} else {
+					System.err.println(getValue("Time_Period") + " : " + getValue("Value"));
+					innerMap.put(Integer.parseInt((String) getValue("Time_Period")), (Double) getValue("Value"));
+					resultMap.put(t, innerMap);
+					break;
+				}
+			}
+
+		}
+		});
+		return resultMap;
+	}
+
+	
 	private String getResourcePath(String heading) {
 		System.err.println("Heading:- " + heading);
 		String result = null;

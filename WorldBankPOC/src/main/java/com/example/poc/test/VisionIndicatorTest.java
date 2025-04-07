@@ -6,6 +6,7 @@ import static org.testng.Assert.assertTrue;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -15,6 +16,7 @@ import org.testng.annotations.Test;
 
 import com.example.poc.page.HomePage;
 import com.example.poc.page.VisionPage;
+import com.example.poc.page.VisionPovMoreDataPage;
 import com.example.poc.utils.BoundaryBoxUtil;
 import com.example.poc.utils.ExcelUtil;
 import com.example.poc.utils.PlaywrightStarter;
@@ -34,7 +36,8 @@ public class VisionIndicatorTest {
 	private VisionPage visionPage;
 	private String url = "https://scorecard.worldbank.org/en/home";
 	String avgIncomeHeading = "Average income shortfall from a prosperity standard of $25/day";
-	private String highIneqHeading="Number of countries/economies with high inequality, defined as those with a Gini index greater than 40.";
+	private String highIneqHeading = "Number of countries/economies with high inequality, defined as those with a Gini index greater than 40.";
+	private VisionPovMoreDataPage povMoreData;
 
 	public VisionIndicatorTest() {
 		page = PlaywrightStarter.getPage();
@@ -68,11 +71,12 @@ public class VisionIndicatorTest {
 		// Step 4
 		verifyData(visionPage.getChart6_85());
 		compareExcelWithTooltip(getTooltip(), visionPage.getLivInPovHeading().textContent());
-		
-		//Step 5
+
+		// Step 5
 		log("Navigate to Vision Indicator Detail Page");
-		visionPage.getMoreData().click();
-		
+		povMoreData= visionPage.clickPovMoreData();
+		page.waitForTimeout(3000);
+//		compareExcelWithCountry(povMoreData.getCountriesList(), povMoreData.getCountryValue("2.15"), visionPage.getLivInPovHeading().textContent());
 
 	}
 
@@ -88,17 +92,16 @@ public class VisionIndicatorTest {
 		assertThat(visionPage.getAvgIncChart()).isVisible();
 		// Step 4
 		verifyData(visionPage.getAvgIncChart());
-		compareExcelWithTooltip(getTooltip(),visionPage.getAvgIncomeHeading().textContent() );
+		compareExcelWithTooltip(getTooltip(), visionPage.getAvgIncomeHeading().textContent());
 	}
-	
+
 	@Test(enabled = false, dependsOnMethods = "verifyVision")
 	public void verifyHighIneq() throws IOException {
 		// Step 3
 		page.waitForTimeout(3000);
 		visionPage.getHighIneqHeading().scrollIntoViewIfNeeded();
 		log("Assert Average income shortfall from a prosperity standard of $25/day");
-		assertThat(page.locator("section"))
-				.containsText(highIneqHeading);
+		assertThat(page.locator("section")).containsText(highIneqHeading);
 		page.waitForTimeout(3000);
 		visionPage.clickIneqChartButton();
 		page.waitForLoadState(LoadState.NETWORKIDLE);
@@ -109,9 +112,8 @@ public class VisionIndicatorTest {
 		// Step 4
 		page.waitForTimeout(2000);
 		verifyData(visionPage.getHighIneqChart());
-		compareExcelWithTooltip(getTooltip(),visionPage.getHighIneqHeading().textContent() );
+		compareExcelWithTooltip(getTooltip(), visionPage.getHighIneqHeading().textContent());
 	}
-	
 
 	private void verifyData(Locator locator) {
 		log("Verify tooltip present with the Excel");
@@ -128,15 +130,14 @@ public class VisionIndicatorTest {
 	}
 
 	private HashMap<Integer, Float> getTooltip() {
-		System.err.println("tooltip : " + visionPage.getTooltip().textContent());
-		return getYearPerMap(visionPage.getTooltip().textContent());
+		return extractYearPerMap(visionPage.getTooltip().textContent());
 
 	}
 
 	private void compareExcelWithTooltip(HashMap<Integer, Float> toolTip, String heading) throws IOException {
 		ExcelUtil excel = new ExcelUtil();
-		HashMap<Integer, Double> excelDataMap=  excel.getExcelData(heading);
-		
+		HashMap<Integer, Double> excelDataMap = excel.getExcelData(heading);
+
 		toolTip.keySet().forEach(t -> {
 			if (excelDataMap.containsKey(t)) {
 				System.err.println("coming now!!!" + excelDataMap.get(t).toString() + " and OG tool tip "
@@ -147,18 +148,33 @@ public class VisionIndicatorTest {
 		});
 	}
 
-
-	private HashMap<Integer, Float> getYearPerMap(String toolTip) {
+	
+	private void compareExcelWithCountry(List<String> countryList,HashMap<String, HashMap<Integer, Double>> moreData, String heading) throws IOException {
+		ExcelUtil excel = new ExcelUtil();
+		HashMap<String, HashMap<Integer, Double>> excelDataMap = excel.getDataCountryWise(countryList,heading);
+		moreData.keySet().forEach(country-> {
+			if (excelDataMap.containsKey(country)) {
+				var excelInnerMap = excelDataMap.get(country);
+				var uiInnerMap = moreData.get(country);
+				uiInnerMap.keySet().forEach(year->{
+					if (excelInnerMap.containsKey(year)) {
+						assertEquals(uiInnerMap.get(year).toString(), excelInnerMap.get(year).toString(), "For Year "+year+" values should match");
+					}
+				});
+				
+			}
+		});
+	}
+	private HashMap<Integer, Float> extractYearPerMap(String toolTip) {
 		System.err.println("Here comes " + toolTip);
-		if(!toolTip.contains("%"))
-		{
-			toolTip = toolTip+"%";
+		if (!toolTip.contains("%")) {
+			toolTip = toolTip + "%";
 		}
 		Pattern pattern = Pattern.compile("\\((\\d{4})\\)\\s*\\|\\s*([\\d\\.]+)%");
 		Matcher matcher = pattern.matcher(toolTip);
 		HashMap<Integer, Float> result = new HashMap<>();
 		if (matcher.find()) {
-			int key = Integer.parseInt(matcher.group(1)); // Captures "2011"
+			int key = Integer.parseInt(matcher.group(1)); 
 			float value = Float.parseFloat(matcher.group(2));
 			System.err.println(" Key: " + key + " Value " + value);
 			result.put(key, value);

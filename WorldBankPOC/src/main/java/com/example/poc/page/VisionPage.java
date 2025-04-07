@@ -78,9 +78,16 @@ public class VisionPage {
 //				"//h3[contains(text(),'Economies with high ')]/../following-sibling::div//*[name()='svg']");
 		return page.locator("#highcharts-gj1se4u-187 rect").nth(1);
 	}
-	
-	public Locator getMoreData()
-	{
+
+	public Locator getPovMoreData() {
 		return page.getByText(" More Data ").first();
 	}
+
+	public VisionPovMoreDataPage clickPovMoreData() {
+		getPovMoreData().click();
+		return new VisionPovMoreDataPage(page);
+	}
+	
+	
+	
 }
