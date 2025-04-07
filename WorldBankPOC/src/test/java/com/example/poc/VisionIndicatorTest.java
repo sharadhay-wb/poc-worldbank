@@ -80,7 +80,7 @@ public class VisionIndicatorTest {
 
 	}
 
-	@Test(enabled = false, dependsOnMethods = "verifyPovChart")
+	@Test(enabled = true, dependsOnMethods = "verifyPovChart")
 	public void verifyAvgIncome() throws IOException {
 		// Step 3
 		page.waitForTimeout(3000);
